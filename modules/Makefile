@@ -1,23 +1,17 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-HELLO_MODULE := hello
-PRINTL_MODULE := printl
+HW2_MODULE := hw2
 
-obj-m += $(HELLO_MODULE).o $(PRINTL_MODULE).o
+obj-m += $(HW2_MODULE).o
 
 ccflags-y += -g -O0 -DDEBUG
 
-all: $(HELLO_MODULE) $(PRINTL_MODULE)
+all: $(HW2_MODULE)
 
-hello:
-	make -C $(KDIR) M=$(PWD) obj-m=$(HELLO_MODULE).o modules
-	cp -fv $(HELLO_MODULE).ko $(DESTDIR)
-
-printl:
-	make -C $(KDIR) M=$(PWD) obj-m=$(PRINTL_MODULE).o modules
-	cp -fv $(PRINTL_MODULE).ko $(DESTDIR)
-
+hw2:
+	make -C $(KDIR) M=$(PWD) obj-m=$(HW2_MODULE).o modules
+	cp -fv $(HW2_MODULE).ko $(DESTDIR)
 
 # Clean all
 clean:
