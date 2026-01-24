@@ -17,7 +17,7 @@ hw2:
 	EXTRAVERSION=$$(grep '^EXTRAVERSION =' $(KDIR)/Makefile | awk '{print $$3}'); \
 	KERNEL_VERSION=$${VERSION}.$${PATCHLEVEL}.$${SUBLEVEL}$${EXTRAVERSION}; \
 	echo "Linux kernel version to link against: $${KERNEL_VERSION}"
-	@echo "Compiler information: $$(gcc --version | head -n 1)"
+	@echo "Compiler: $$(gcc --version | head -n 1)"
 	make -C $(KDIR) M=$(PWD) obj-m=$(HW2_MODULE).o modules
 	cp -fv $(HW2_MODULE).ko $(DESTDIR)
 

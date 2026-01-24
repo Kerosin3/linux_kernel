@@ -31,7 +31,6 @@ static int set_index(const char *val, const struct kernel_param *kp)
 		       WRITE_LIMIT - 1);
 		return -EINVAL;
 	}
-	pr_info("set index to write : %u\n", idx);
 	return 0;
 }
 
@@ -68,7 +67,6 @@ static int set_char(const char *val, const struct kernel_param *kp)
 	}
 
 	my_char_array[idx] = ch_val;
-	pr_info("written %c to %u \n", ch_val, idx);
 	return 0;
 }
 

@@ -9,12 +9,12 @@ index=5
 for i in $(seq 0 $(($len - 1))); do
   char=${str:$i:1}
   ascii=$(printf "%d" "'$char")
-  echo $index > /sys/modules/hw2/parameters/idx
-  echo $ascii > /sys/modules/hw2/parameters/ch_val
+  echo $index > /sys/module/hw2/parameters/idx
+  echo $ascii > /sys/module/hw2/parameters/ch_val
   index=$(($index + 1))
 done
 
-read_back=$(cat /sys/modules/hw2/parameters/my_str)
+read_back=$(cat /sys/module/hw2/parameters/my_str)
 if [ "$read_back" = "Hello world!" ]; then
   echo "test passed!"
 fi
