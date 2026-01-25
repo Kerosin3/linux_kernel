@@ -22,7 +22,7 @@ int stack_push(int);
 //
 //int stack_pop(void);
 //
-int stack_peek(void);
+int stack_peek(int *val);
 //
 //int stack_is_empty(void);
 //

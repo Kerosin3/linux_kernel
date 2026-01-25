@@ -18,10 +18,14 @@ int stack_push(int value)
 	return 0;
 }
 
-int stack_peek(void) {
+int stack_peek(int *val) {
+	if (!val) {
+        return -EINVAL;
+    }
     if (list_empty(&stack_head)) {
-        return -1;
+        return STACK_EMPTY;
     }
     struct stack_entry *top = list_first_entry(&stack_head, struct stack_entry, list);
-    return top->data;
+	*val = top->data;
+    return 0;
 }
