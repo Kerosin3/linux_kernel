@@ -1,15 +1,18 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-HW2_MODULE := hw2
+KMODULE := kernel_stack
 
-obj-m += $(HW2_MODULE).o
+obj-m += $(KMODULE).o
 
-ccflags-y += -g -O0 -DDEBUG
+SRCS := $(wildcard src/*.c) $(wildcard lib/*.c)
+$(KMODULE)-objs := $(SRCS:.c=.o)
 
-all: $(HW2_MODULE)
+ccflags-y += -g -O0 -DDEBUG -I$(src)/inc -I$(src)/lib/inc
 
-hw2:
+all: build
+
+build:
 	@echo "Current kernel version: $$(uname -r)"
 	@VERSION=$$(grep '^VERSION =' $(KDIR)/Makefile | awk '{print $$3}'); \
 	PATCHLEVEL=$$(grep '^PATCHLEVEL =' $(KDIR)/Makefile | awk '{print $$3}'); \
@@ -18,11 +21,11 @@ hw2:
 	KERNEL_VERSION=$${VERSION}.$${PATCHLEVEL}.$${SUBLEVEL}$${EXTRAVERSION}; \
 	echo "Linux kernel version to link against: $${KERNEL_VERSION}"
 	@echo "Compiler: $$(gcc --version | head -n 1)"
-	make -C $(KDIR) M=$(PWD) obj-m=$(HW2_MODULE).o modules
-	cp -fv $(HW2_MODULE).ko $(DESTDIR)
+	make -C $(KDIR) M=$(PWD) modules
+	cp -fv $(KMODULE).ko $(DESTDIR)
 
-format-hw2:
-	clang-format --verbose -i --style=file hw2.c
+format:
+	clang-format --verbose -i --style=file src/main.c lib/*.c
 
 # Clean all
 clean:
