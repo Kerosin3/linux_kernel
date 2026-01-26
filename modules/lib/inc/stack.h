@@ -20,15 +20,15 @@ void stack_init(void);
 //
 int stack_push(int);
 //
-//int stack_pop(void);
+int stack_pop(int *val);
 //
 int stack_peek(int *val);
 //
-//int stack_is_empty(void);
+int stack_is_empty(void);
 //
-//ssize_t stack_size(void);
+size_t stack_size(void);
 //
-//void stack_clear(void);
+void stack_clear(void);
 
 
 #endif
