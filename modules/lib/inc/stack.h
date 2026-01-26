@@ -3,10 +3,10 @@
 
 #include <linux/list.h>
 
-#define STACK_OK          0      /* Операция успешна */
-#define STACK_EMPTY      -1      /* Стек пуст */
-#define STACK_NOMEM      -2      /* Нет памяти */
-#define STACK_INVALID    -3      /* Неверный параметр */
+#define STACK_OK 0 /* Операция успешна */
+#define STACK_EMPTY -1 /* Стек пуст */
+#define STACK_NOMEM -2 /* Нет памяти */
+#define STACK_INVALID -3 /* Неверный параметр */
 
 //stack entry
 struct stack_entry {
@@ -29,6 +29,5 @@ int stack_is_empty(void);
 size_t stack_size(void);
 //
 void stack_clear(void);
-
 
 #endif
