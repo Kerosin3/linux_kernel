@@ -1,2 +1,3 @@
 cd /mnt/
 ./runtest.sh 
+./mnt/runtest.sh 
