@@ -24,7 +24,6 @@ ssize_t push_store(struct kobject *, struct kobj_attribute *, const char *,
 extern struct attribute_group attr_group;
 
 // size attribute
-
 static unsigned size_val;
 
 ssize_t size_show(struct kobject *, struct kobj_attribute *, char *);
@@ -45,7 +44,6 @@ static int is_empty_val;
 ssize_t is_empty_show(struct kobject *, struct kobj_attribute *, char *);
 
 // clear attribute
-
 static int clear_val;
 
 ssize_t clear_store(struct kobject *, struct kobj_attribute *, const char *,

@@ -4,13 +4,13 @@ MODULE_PATH="/mnt/kernel_stack.ko"
 MODULE_NAME="kernel_stack"
 SYS_PATH="/sys/kernel/${MODULE_NAME}"
 
-# output error and exit
+# Function to output error and exit
 die() {
     echo "ERROR: $1" >&2
     exit 1
 }
 
-# check if module is loaded
+# Function to check if module is loaded
 is_module_loaded() {
     lsmod | grep "^${MODULE_NAME}" >/dev/null 2>&1
 }
@@ -57,7 +57,7 @@ empty=$(cat "${SYS_PATH}/is_empty")
 if [ "${empty}" != "1" ]; then
     die "After loading, is_empty should be 1, but it is ${empty}"
 fi
-# Check peek/pop on empty stack
+# Check peek/pop on empty stack (expect error or empty string)
 peek=$(cat "${SYS_PATH}/peek" 2>/dev/null)
 if [ -n "${peek}" ]; then
     echo "Warning: peek on empty stack returned ${peek} (expected error)"
@@ -148,6 +148,34 @@ if [ "${size}" != "2" ]; then
 fi
 echo 1 > "${SYS_PATH}/clear"
 
+# 11. Test 7: Testing with negative numbers
+echo "Test 7: Testing with negative numbers"
+echo -10 > "${SYS_PATH}/push" || die "Error pushing -10"
+echo -20 > "${SYS_PATH}/push" || die "Error pushing -20"
+echo -30 > "${SYS_PATH}/push" || die "Error pushing -30"
+size=$(cat "${SYS_PATH}/size")
+if [ "${size}" != "3" ]; then
+    die "After adding 3 negative elements, size should be 3, but it is ${size}"
+fi
+peek=$(cat "${SYS_PATH}/peek")
+if [ "${peek}" != "-30" ]; then
+    die "Peek returned ${peek}, expected -30"
+fi
+pop=$(cat "${SYS_PATH}/pop")
+if [ "${pop}" != "-30" ]; then
+    die "Pop returned ${pop}, expected -30"
+fi
+size=$(cat "${SYS_PATH}/size")
+if [ "${size}" != "2" ]; then
+    die "After pop, size should be 2, but it is ${size}"
+fi
+empty=$(cat "${SYS_PATH}/is_empty")
+if [ "${empty}" != "0" ]; then
+    die "After operations with negatives, is_empty should be 0, but it is ${empty}"
+fi
+echo 1 > "${SYS_PATH}/clear"
+
+# Final unload
 echo "All tests passed"
 echo "Unloading module..."
 rmmod "${MODULE_NAME}" || die "Error unloading module ${MODULE_NAME}"
