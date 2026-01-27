@@ -26,8 +26,8 @@ int stack_peek(int *val)
 		return -EINVAL;
 	}
 	if (list_empty(&stack_head)) {
-		pr_err("%s:%s stack is empty! id: %lu\n", KBUILD_MODNAME,
-		       __func__, jiffies);
+		//pr_err("%s:%s stack is empty! id: %lu\n", KBUILD_MODNAME,
+		//       __func__, jiffies);
 		return STACK_EMPTY;
 	}
 	struct stack_entry *top =
@@ -42,8 +42,8 @@ int stack_pop(int *val)
 		return -EINVAL;
 	}
 	if (list_empty(&stack_head)) {
-		pr_err("%s:%s stack is empty! id: %lu\n", KBUILD_MODNAME,
-		       __func__, jiffies);
+		//pr_err("%s:%s stack is empty! id: %lu\n", KBUILD_MODNAME,
+		//       __func__, jiffies);
 		return STACK_EMPTY;
 	}
 	struct stack_entry *top =
