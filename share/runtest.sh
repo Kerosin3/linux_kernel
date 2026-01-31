@@ -1,182 +1,153 @@
 #!/bin/sh
 
-MODULE_PATH="/mnt/kernel_stack.ko"
-MODULE_NAME="kernel_stack"
-SYS_PATH="/sys/kernel/${MODULE_NAME}"
+ERROR_COUNT=0
 
-# Function to output error and exit
-die() {
-    echo "ERROR: $1" >&2
+# Load the module
+insmod /mnt/kernel_fifo.ko
+if [ $? -ne 0 ]; then
+    echo "Module load: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
     exit 1
-}
-
-# Function to check if module is loaded
-is_module_loaded() {
-    lsmod | grep "^${MODULE_NAME}" >/dev/null 2>&1
-}
-
-# 1. Check if module file exists
-echo "Checking module file..."
-if [ ! -f "${MODULE_PATH}" ]; then
-    die "Module file not found: ${MODULE_PATH}"
+else
+    echo "Module load: PASS"
 fi
 
-# 2. Unload module if already loaded
-if is_module_loaded; then
-    echo "Module ${MODULE_NAME} is already loaded. Unloading..."
-    rmmod "${MODULE_NAME}" || die "Failed to unload existing module ${MODULE_NAME}"
+PARAM_DIR="/sys/module/kernel_fifo/parameters"
+
+# Test initial state
+if [ "$(cat $PARAM_DIR/is_empty)" = "1" ]; then
+    echo "Initial is_empty: PASS"
+else
+    echo "Initial is_empty: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
 
-# 3. Load module
-echo "Loading module: ${MODULE_PATH}"
-insmod "${MODULE_PATH}" || die "Error loading module ${MODULE_PATH}"
-
-sleep 1
-
-# Verify module loaded
-if ! is_module_loaded; then
-    die "Module ${MODULE_NAME} did not appear in loaded modules list"
+if [ "$(cat $PARAM_DIR/is_full)" = "0" ]; then
+    echo "Initial is_full: PASS"
+else
+    echo "Initial is_full: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
-echo "Module loaded successfully"
 
-# 4. Check sysfs attributes
-for attr in push peek pop size is_empty clear; do
-    if [ ! -f "${SYS_PATH}/${attr}" ]; then
-        die "Missing sysfs attribute: ${SYS_PATH}/${attr}"
+if [ "$(cat $PARAM_DIR/size)" = "0" ]; then
+    echo "Initial size: PASS"
+else
+    echo "Initial size: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+# Determine capacity from initial available
+CAP=$(cat $PARAM_DIR/available)
+echo "Detected capacity: $CAP elements"
+
+if [ $CAP -le 0 ]; then
+    echo "Capacity detection: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+    rmmod kernel_fifo
+    exit 1
+fi
+
+# Test dequeue and peek on empty queue (expect failure)
+cat $PARAM_DIR/dequeue 2>&1
+if [ $? -ne 0 ]; then
+    echo "Dequeue on empty: PASS (failed as expected)"
+else
+    echo "Dequeue on empty: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+cat $PARAM_DIR/peek 2>&1
+if [ $? -ne 0 ]; then
+    echo "Peek on empty: PASS (failed as expected)"
+else
+    echo "Peek on empty: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+# Enqueue sequential values until full
+i=1
+while [ $i -le $((CAP + 1)) ]; do
+    echo $i > $PARAM_DIR/enqueue
+    if [ $? -ne 0 ]; then
+        break
+    fi
+    i=$((i + 1))
+done
+
+# Check if filled to capacity
+if [ "$(cat $PARAM_DIR/size)" = "$CAP" ] && [ "$(cat $PARAM_DIR/is_full)" = "1" ] && [ "$(cat $PARAM_DIR/is_empty)" = "0" ] && [ "$(cat $PARAM_DIR/available)" = "0" ]; then
+    echo "Fill to full: PASS"
+else
+    echo "Fill to full: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+# Test enqueue on full (expect failure)
+echo 100 > $PARAM_DIR/enqueue 2>&1
+if [ $? -ne 0 ]; then
+    echo "Enqueue on full: PASS (failed as expected)"
+else
+    echo "Enqueue on full: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+# Test peek on full queue (should return first enqueued: 1)
+PEEK_VAL=$(cat $PARAM_DIR/peek)
+if [ "$PEEK_VAL" = "1" ] && [ "$(cat $PARAM_DIR/size)" = "$CAP" ]; then
+    echo "Peek on full: PASS"
+else
+    echo "Peek on full: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+fi
+
+# Dequeue all values and verify FIFO order
+FAIL=0
+for i in $(seq 1 $CAP); do
+    VAL=$(cat $PARAM_DIR/dequeue)
+    if [ $? -ne 0 ] || [ "$VAL" != "$i" ]; then
+        FAIL=1
+        break
     fi
 done
-echo "All sysfs attributes present"
-
-# 5. Test 1: Empty stack after loading
-echo "Test 1: Checking empty stack"
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "0" ]; then
-    die "After loading, size should be 0, but it is ${size}"
-fi
-empty=$(cat "${SYS_PATH}/is_empty")
-if [ "${empty}" != "1" ]; then
-    die "After loading, is_empty should be 1, but it is ${empty}"
-fi
-# Check peek/pop on empty stack (expect error or empty string)
-peek=$(cat "${SYS_PATH}/peek" 2>/dev/null)
-if [ -n "${peek}" ]; then
-    echo "Warning: peek on empty stack returned ${peek} (expected error)"
-fi
-pop=$(cat "${SYS_PATH}/pop" 2>/dev/null)
-if [ -n "${pop}" ]; then
-    echo "Warning: pop on empty stack returned ${pop} (expected error)"
+if [ $FAIL -eq 0 ] && [ "$(cat $PARAM_DIR/is_empty)" = "1" ] && [ "$(cat $PARAM_DIR/size)" = "0" ] && [ "$(cat $PARAM_DIR/available)" = "$CAP" ]; then
+    echo "Dequeue all (order check): PASS"
+else
+    echo "Dequeue all (order check): FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
 
-# 6. Test 2: Adding elements
-echo "Test 2: Adding elements"
-echo 10 > "${SYS_PATH}/push" || die "Error pushing 10"
-echo 20 > "${SYS_PATH}/push" || die "Error pushing 20"
-echo 30 > "${SYS_PATH}/push" || die "Error pushing 30"
-echo 40 > "${SYS_PATH}/push" || die "Error pushing 40"
-echo 50 > "${SYS_PATH}/push" || die "Error pushing 50"
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "5" ]; then
-    die "After adding 5 elements, size should be 5, but it is ${size}"
-fi
-empty=$(cat "${SYS_PATH}/is_empty")
-if [ "${empty}" != "0" ]; then
-    die "After adding, is_empty should be 0, but it is ${empty}"
+# Partial fill for clear test
+for i in $(seq 1 10); do
+    echo $i > $PARAM_DIR/enqueue
+done
+if [ "$(cat $PARAM_DIR/size)" = "10" ]; then
+    echo "Partial fill: PASS"
+else
+    echo "Partial fill: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
 
-# 7. Test 3: Peek
-echo "Test 3: Peek"
-peek=$(cat "${SYS_PATH}/peek")
-if [ "${peek}" != "50" ]; then
-    die "Peek returned ${peek}, expected 50"
-fi
-peek2=$(cat "${SYS_PATH}/peek")
-if [ "${peek2}" != "50" ]; then
-    die "Repeated peek returned ${peek2}, expected 50"
-fi
-size=$(cat "${SYS_PATH}/size")  # Size should not change
-if [ "${size}" != "5" ]; then
-    die "After peek, size should remain 5, but it is ${size}"
+# Clear the queue
+echo 1 > $PARAM_DIR/clear
+if [ $? -eq 0 ] && [ "$(cat $PARAM_DIR/is_empty)" = "1" ] && [ "$(cat $PARAM_DIR/size)" = "0" ] && [ "$(cat $PARAM_DIR/available)" = "$CAP" ]; then
+    echo "Clear: PASS"
+else
+    echo "Clear: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
 
-# 8. Test 4: Pop
-echo "Test 4: Pop"
-pop=$(cat "${SYS_PATH}/pop")
-if [ "${pop}" != "50" ]; then
-    die "Pop returned ${pop}, expected 50"
-fi
-pop=$(cat "${SYS_PATH}/pop")
-if [ "${pop}" != "40" ]; then
-    die "Pop returned ${pop}, expected 40"
-fi
-pop=$(cat "${SYS_PATH}/pop")
-if [ "${pop}" != "30" ]; then
-    die "Pop returned ${pop}, expected 30"
-fi
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "2" ]; then
-    die "After 3 pops, size should be 2, but it is ${size}"
+# Unload the module
+rmmod kernel_fifo
+if [ $? -eq 0 ]; then
+    echo "Module unload: PASS"
+else
+    echo "Module unload: FAIL"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
 fi
 
-# 9. Test 5: Clear and recheck
-echo "Test 5: Clear"
-echo 1 > "${SYS_PATH}/clear" || die "Error clearing"
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "0" ]; then
-    die "After clear, size should be 0, but it is ${size}"
+# Final check
+if [ $ERROR_COUNT -eq 0 ]; then
+    echo "All tests were complited succesfully"
+else
+    echo "Some test failed ( FAIL test count: $ERROR_COUNT)"
 fi
-empty=$(cat "${SYS_PATH}/is_empty")
-if [ "${empty}" != "1" ]; then
-    die "After clear, is_empty should be 1, but it is ${empty}"
-fi
-
-# 10. Test 6: Refill and mixed operations
-echo "Test 6: Refill and mixed operations"
-echo 100 > "${SYS_PATH}/push"
-echo 200 > "${SYS_PATH}/push"
-peek=$(cat "${SYS_PATH}/peek")
-if [ "${peek}" != "200" ]; then
-    die "Peek returned ${peek}, expected 200"
-fi
-pop=$(cat "${SYS_PATH}/pop")
-if [ "${pop}" != "200" ]; then
-    die "Pop returned ${pop}, expected 200"
-fi
-echo 300 > "${SYS_PATH}/push"
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "2" ]; then
-    die "After mixed operations, size should be 2, but it is ${size}"
-fi
-echo 1 > "${SYS_PATH}/clear"
-
-# 11. Test 7: Testing with negative numbers
-echo "Test 7: Testing with negative numbers"
-echo -10 > "${SYS_PATH}/push" || die "Error pushing -10"
-echo -20 > "${SYS_PATH}/push" || die "Error pushing -20"
-echo -30 > "${SYS_PATH}/push" || die "Error pushing -30"
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "3" ]; then
-    die "After adding 3 negative elements, size should be 3, but it is ${size}"
-fi
-peek=$(cat "${SYS_PATH}/peek")
-if [ "${peek}" != "-30" ]; then
-    die "Peek returned ${peek}, expected -30"
-fi
-pop=$(cat "${SYS_PATH}/pop")
-if [ "${pop}" != "-30" ]; then
-    die "Pop returned ${pop}, expected -30"
-fi
-size=$(cat "${SYS_PATH}/size")
-if [ "${size}" != "2" ]; then
-    die "After pop, size should be 2, but it is ${size}"
-fi
-empty=$(cat "${SYS_PATH}/is_empty")
-if [ "${empty}" != "0" ]; then
-    die "After operations with negatives, is_empty should be 0, but it is ${empty}"
-fi
-echo 1 > "${SYS_PATH}/clear"
-
-# Final unload
-echo "All tests passed"
-echo "Unloading module..."
-rmmod "${MODULE_NAME}" || die "Error unloading module ${MODULE_NAME}"
-echo "Testing completed"
