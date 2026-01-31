@@ -1,11 +1,11 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-KMODULE := kernel_stack
+KMODULE := kernel_fifo
 
 obj-m += $(KMODULE).o
 
-SRCS := $(wildcard src/*.c) $(wildcard lib/*.c)
+SRCS := $(wildcard src/*.c)
 $(KMODULE)-objs := $(SRCS:.c=.o)
 
 ccflags-y += -g -O0 -DDEBUG -I$(src)/inc -I$(src)/lib/inc
