@@ -4,30 +4,43 @@
 #include <linux/gfp.h>
 #include <linux/mm.h>
 #include <linux/kfifo.h>
+#include <linux/mutex.h>
 
-#define FIFO_OK          0      /* Операция успешна */
-#define FIFO_EMPTY      -1      /* Очередь пуста */
-#define FIFO_FULL       -2      /* Очередь полна */
-#define FIFO_NOMEM      -3      /* Нет памяти */
-#define FIFO_INVALID    -4      /* Неверный параметр */
+#define FIFO_OK 0 /* Операция успешна */
+#define FIFO_EMPTY -1 /* Очередь пуста */
+#define FIFO_FULL -2 /* Очередь полна */
+#define FIFO_NOMEM -3 /* Нет памяти */
+#define FIFO_INVALID -4 /* Неверный параметр */
 
-#define BUFFER_ORDER 0
-#define BUFFER_SIZE (PAGE_SIZE << BUFFER_ORDER)
+static DEFINE_MUTEX(fifo_mutex);
 
-/* kfifo */
-static struct kfifo my_fifo;
+/* kfifo of int elements */
+typedef STRUCT_KFIFO_PTR(int) my_fifo_t;
 
-/* page of memory for store */
-static void* kbuffer;
+extern my_fifo_t my_fifo;
 
-/* initialize the fifo */
-int fifo_init(int);
+/* ptr beginning of memory page for store */
+static void *kbuffer;
 
-/* clean the memory */
+/* initialize the fifo with required number of ELEMENTS (ints) */
+int fifo_init(size_t);
+
 void fifo_cleanup(void);
 
-/* enqueue an element */
-
 int fifo_enqueue(int);
+
+int fifo_dequeue(int *);
+
+int fifo_is_empty(void);
+
+int fifo_is_full(void);
+
+unsigned fifo_clen(void);
+
+unsigned fifo_available(void);
+
+int fifo_peek(int *);
+
+void fifo_clear(void);
 
 #endif

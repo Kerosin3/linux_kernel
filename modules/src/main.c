@@ -12,28 +12,19 @@
 #include "kfifo.h"
 #include "sysfs.h"
 
-static struct kobject *kobj_fifo;
-
 static int __init hello_init(void)
 {
-	int ret;
-	kobj_fifo = kobject_create_and_add("kernel_fifo", kernel_kobj);
-	if (!kobj_fifo)
-		return -ENOMEM;
-	ret = sysfs_create_group(kobj_fifo, &attr_group);
-	if (ret) {
-		kobject_put(kobj_fifo);
-		return ret;
+	/* allocate fifo with 64 int capacity */
+	int ret = fifo_init(64);
+	if (!ret) {
+		pr_info("%s: init: Module loaded!\n", KBUILD_MODNAME);
+		return 0;
 	}
-	ret = fifo_init(0);
-	pr_info("%s: init: Module loaded!\n", KBUILD_MODNAME);
-	return 0;
+	return ret;
 }
 
 static void __exit hello_exit(void)
 {
-	sysfs_remove_group(kobj_fifo, &attr_group);
-	kobject_put(kobj_fifo);
 	fifo_cleanup();
 	pr_info("%s: exit: Module unloaded!\n", KBUILD_MODNAME);
 }
