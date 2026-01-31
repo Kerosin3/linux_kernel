@@ -1,16 +1,1 @@
 ./mnt/runtest.sh
-cd /mnt/
-insmod kernel_fifo.ko 
-cd /sys/module/kernel_fifo/
-ls -la
-cd parameters/
-cat peek 
-cat is_
-cat is_empty 
-echo $?
-echo 5 > enqueue 
-cat peek 
-cat is_empty 
-cat available 
-echo 5 > clear 
-cat available 
