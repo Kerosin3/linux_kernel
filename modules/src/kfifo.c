@@ -31,7 +31,7 @@ int fifo_init(size_t kfifosize)
 	}
 
 	pr_info("%s: memory for kfifo was allocated (slab-allocator) with capacity of %u elements (%lu bytes)\n",
-		KBUILD_MODNAME, fifo_capacity_elements, buffer_size_bytes);
+		KBUILD_MODNAME, fifo_capacity_elements, ksize(kbuffer));
 	return 0;
 }
 
