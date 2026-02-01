@@ -3,15 +3,22 @@
 
 #include <linux/hashtable.h>
 #include <linux/slab.h>
+#include <linux/hash.h>
 
-static struct hlist_head *my_hashtable;
+// cache pointer
+extern struct kmem_cache *g_entry_cache;
 
-static unsigned hash_bits = 10;
+extern struct hlist_head *my_hashtable;
 
-static size_t hash_size;
+// struct for thje hashtable entry
+struct hashmap_entry {
+	u32 key;
+	char *filename;
+	struct hlist_node node;
+};
 
 int hash_initialize(void);
 
-int hash_exit(void);
+void hash_exit(void);
 
 #endif
