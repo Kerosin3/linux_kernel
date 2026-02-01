@@ -12,7 +12,8 @@ int fifo_init(size_t kfifosize)
 		return -EINVAL;
 	}
 
-	buffer_size_bytes = kfifosize * sizeof(int);
+	if (unlikely(check_mul_overflow(kfifosize, sizeof(int), &buffer_size_bytes)))
+		return -EINVAL;
 	fifo_capacity_elements = buffer_size_bytes / sizeof(int);
 
 	kbuffer = kzalloc(buffer_size_bytes, GFP_KERNEL);
