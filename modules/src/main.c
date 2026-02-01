@@ -1,4 +1,3 @@
-
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -9,23 +8,25 @@
 #include <linux/kobject.h>
 #include <linux/fs.h>
 
-#include "kfifo.h"
 #include "sysfs.h"
+#include "hashmap.h"
 
 static int __init hello_init(void)
 {
-	/* allocate fifo with 64 int capacity */
-	int ret = fifo_init(64);
-	if (!ret) {
-		pr_info("%s: init: Module loaded!\n", KBUILD_MODNAME);
-		return 0;
-	}
+	int ret;
+	ret = sysfs_init();
+	if (ret)
+		return ret;
+	ret = hash_initialize();
+	if (ret)
+		return -ENOMEM;
 	return ret;
 }
 
 static void __exit hello_exit(void)
 {
-	fifo_cleanup();
+	sysfs_exit();
+	hash_exit();
 	pr_info("%s: exit: Module unloaded!\n", KBUILD_MODNAME);
 }
 
@@ -34,5 +35,5 @@ module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alex V");
-MODULE_DESCRIPTION("Homework 4");
+MODULE_DESCRIPTION("Homework 6");
 MODULE_VERSION("1.0");

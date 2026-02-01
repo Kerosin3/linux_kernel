@@ -1,1 +1,57 @@
 ./mnt/runtest.sh
+cd /mnt/
+ls
+insmod kernel_fifo.ko 
+dmesg
+rmmod kernel_fifo
+insmod kernel_fifo.ko 
+rmmod kernel_fifo
+insmod kernel_fifo.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /sys/kernel/path_scanner/
+ls
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /sys/kernel/path_scanner/
+ls
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /sys/kernel/path_scanner/
+ls
+cd /mnt/
+ls
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+dmesg
+insmod ex_bin_tree.ko 
+cd .mn
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /sys/kernel/path_scanner/
+ls
+dmesg
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+dmesg
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+cd /mnt/
+insmod ex_bin_tree.ko 
+rmmod ex_bin_tree
+insmod ex_bin_tree.ko 

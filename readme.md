@@ -1,4 +1,4 @@
-# Homework 4
+# Homework 6
 
 ## Instruction how to run
 

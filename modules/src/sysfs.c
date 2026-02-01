@@ -1,155 +1,65 @@
 #include "sysfs.h"
 
-/* enqueue */
-int enqueue_val = 0;
-
-static int enqueue(const char *val, const struct kernel_param *kp)
+static ssize_t sorted_files_show(struct kobject *kobj,
+				 struct kobj_attribute *attr, char *buf)
 {
-	int ret = param_set_int(val, kp);
-	if (!ret) {
-		ret = fifo_enqueue(enqueue_val);
-		if (ret == 0) {
-			return FIFO_OK;
-		}
-	}
-	return ret;
+	return 1;
 }
 
-const struct kernel_param_ops enqueue_ops = {
-	.set = enqueue,
-	.get = NULL,
-};
-
-module_param_cb(enqueue, &enqueue_ops, &enqueue_val, 0644);
-MODULE_PARM_DESC(enqueue_val, "Value to enqueue into KFIFO");
-
-/* dequeue */
-int dequeue = 0;
-
-static int dequeuef(char *buffer, const struct kernel_param *kp)
+static ssize_t scan_path_store(struct kobject *kobj,
+			       struct kobj_attribute *attr, const char *buf,
+			       size_t count)
 {
+	char path[PATH_MAX_LENGTH];
 	int ret;
-	ret = fifo_dequeue(&dequeue);
-	if (!ret)
-		return param_get_int(buffer, kp);
-	return ret;
-}
+	strscpy(path, buf, sizeof(path));
+	strim(path);
 
-const struct kernel_param_ops dequeue_ops = {
-	.set = NULL,
-	.get = dequeuef,
-};
+	pr_info("Scanning directory: %s\n", path);
 
-module_param_cb(dequeue, &dequeue_ops, &dequeue, 0444);
-MODULE_PARM_DESC(dequeue, "Value denqueue from KFIFO");
-
-/* is_empty */
-int is_empty_val = 0;
-
-static int is_empty(char *buffer, const struct kernel_param *kp)
-{
-	is_empty_val = fifo_is_empty() ? 1 : 0;
-	return param_get_int(buffer, kp);
-}
-
-const struct kernel_param_ops is_empty_ops = {
-	.set = NULL,
-	.get = is_empty,
-};
-
-module_param_cb(is_empty, &is_empty_ops, &is_empty_val, 0444);
-MODULE_PARM_DESC(is_empty_val, "if KFIFO is empty");
-
-/* is_full */
-int is_full_val = 0;
-
-static int is_full(char *buffer, const struct kernel_param *kp)
-{
-	is_full_val = fifo_is_full() ? 1 : 0;
-	return param_get_int(buffer, kp);
-}
-
-const struct kernel_param_ops is_full_ops = {
-	.set = NULL,
-	.get = is_full,
-};
-
-module_param_cb(is_full, &is_full_ops, &is_full_val, 0444);
-MODULE_PARM_DESC(is_full_val, "if KFIFO if full");
-
-/* curren length */
-unsigned size_val = 0;
-
-static int clen(char *buffer, const struct kernel_param *kp)
-{
-	size_val = fifo_clen();
-	return param_get_uint(buffer, kp);
-}
-
-const struct kernel_param_ops clen_ops = {
-	.set = NULL,
-	.get = clen,
-};
-
-module_param_cb(size, &clen_ops, &size_val, 0444);
-MODULE_PARM_DESC(size_val, "current size of KFIFO (elements)");
-
-/* available */
-unsigned available_val = 0;
-
-static int available(char *buffer, const struct kernel_param *kp)
-{
-	available_val = fifo_available();
-	return param_get_uint(buffer, kp);
-}
-
-const struct kernel_param_ops available_ops = {
-	.set = NULL,
-	.get = available,
-};
-
-module_param_cb(available, &available_ops, &available_val, 0444);
-MODULE_PARM_DESC(available_val, "available elements in KFIFO");
-
-/* peek */
-int peek_val = 0;
-
-static int peek(char *buffer, const struct kernel_param *kp)
-{
-	int ret;
-	ret = fifo_peek(&peek_val);
-	if (!ret) {
-		return param_get_int(buffer, kp);
-	} else {
+	ret = scan_directory(path);
+	if (ret < 0) {
+		pr_err("Failed to scan directory: %d\n", ret);
 		return ret;
 	}
+	return count;
 }
 
-const struct kernel_param_ops peek_ops = {
-	.set = NULL,
-	.get = peek,
-};
+static struct kobj_attribute scan_path_attr = __ATTR_WO(scan_path);
+static struct kobj_attribute sorted_files_attr = __ATTR_RO(sorted_files);
 
-module_param_cb(peek, &peek_ops, &peek_val, 0444);
-MODULE_PARM_DESC(peek_val, "peek a value from KFIFO");
-
-/* clear */
-int clear_val = 0;
-
-static int clear(const char *val, const struct kernel_param *kp)
+int sysfs_init(void)
 {
-	int ret = param_set_int(val, kp);
-	if (!ret) {
-		fifo_clear();
-		return 0;
+	int ret;
+
+	kobj = kobject_create_and_add("path_scanner", kernel_kobj);
+	if (!kobj) {
+		return -ENOMEM;
 	}
+
+	ret = sysfs_create_file(kobj, &scan_path_attr.attr);
+	if (ret) {
+		goto cleanup_kobj;
+	}
+
+	ret = sysfs_create_file(kobj, &sorted_files_attr.attr);
+	if (ret) {
+		sysfs_remove_file(kobj, &scan_path_attr.attr);
+		goto cleanup_kobj;
+	}
+
+	pr_info("Sysfs: /sys/kernel/path_scanner/ created with attributes\n");
+	return 0;
+
+cleanup_kobj:
+	kobject_put(kobj);
+	kobj = NULL;
 	return ret;
 }
 
-const struct kernel_param_ops clear_ops = {
-	.set = clear,
-	.get = NULL,
-};
-
-module_param_cb(clear, &clear_ops, &clear_val, 0644);
-MODULE_PARM_DESC(clear_val, "clear KFIFO content");
+void sysfs_exit(void)
+{
+	sysfs_remove_file(kobj, &scan_path_attr.attr);
+	sysfs_remove_file(kobj, &sorted_files_attr.attr);
+	kobject_put(kobj);
+}

@@ -1,7 +1,7 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-KMODULE := kernel_fifo
+KMODULE := ex_bin_tree
 
 obj-m += $(KMODULE).o
 
