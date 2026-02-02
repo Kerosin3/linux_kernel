@@ -2,13 +2,17 @@ KDIR := ../linux-6.18
 DESTDIR := ../share/
 
 KMODULE := ex_bin_tree
+SUBMODULE ?= ex_sub_bin_tree
 
-obj-m += $(KMODULE).o
+obj-m += $(KMODULE).o $(SUBMODULE).o
 
 SRCS := $(wildcard src/*.c)
 $(KMODULE)-objs := $(SRCS:.c=.o)
 
-ccflags-y += -g -O0 -DDEBUG -I$(src)/inc -I$(src)/lib/inc
+SUB_SRCS := $(wildcard submodule/*.c)
+$(SUBMODULE)-objs := $(SUB_SRCS:.c=.o)
+
+ccflags-y += -g -O0 -DDEBUG -I$(src)/inc -I$(src)/lib/inc -I$(src)/shared_h
 
 all: build
 
@@ -22,10 +26,10 @@ build:
 	echo "Linux kernel version to link against: $${KERNEL_VERSION}"
 	@echo "Compiler: $$(gcc --version | head -n 1)"
 	make -C $(KDIR) M=$(PWD) modules
-	cp -fv $(KMODULE).ko $(DESTDIR)
+	cp -fv $(KMODULE).ko $(SUBMODULE).ko $(DESTDIR)
 
 format:
-	clang-format --verbose -i --style=file src/main.c lib/*.c
+	clang-format --verbose -i --style=file src/main.c lib/*.c submodule/*.c
 
 # Clean all
 clean:

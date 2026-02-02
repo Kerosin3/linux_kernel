@@ -5,16 +5,13 @@
 #include <linux/string.h>
 #include <linux/kobject.h>
 
-#include "scanner.h"
-
-#define PATH_MAX_LENGTH 256
+#include "hashmap_s.h"
+#include "sorter.h"
 
 extern struct kobject *kobj;
 
 int sysfs_init(void);
 
 void sysfs_exit(void);
-
-extern int scan_directory(const char *path);
 
 #endif

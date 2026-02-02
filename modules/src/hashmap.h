@@ -5,20 +5,14 @@
 #include <linux/slab.h>
 #include <linux/hash.h>
 
-// cache pointer
-extern struct kmem_cache *g_entry_cache;
-
-extern struct hlist_head *my_hashtable;
-
-// struct for thje hashtable entry
-struct hashmap_entry {
-	u32 key;
-	char *filename;
-	struct hlist_node node;
-};
+#include "hashmap_s.h"
 
 int hash_initialize(void);
 
 void hash_exit(void);
+
+void add_to_hashmap(struct hashmap_entry *);
+
+void clean(void);
 
 #endif

@@ -11,7 +11,13 @@
 #include "sysfs.h"
 #include "hashmap.h"
 
-static int __init hello_init(void)
+// export symbols
+EXPORT_SYMBOL(g_entry_cache);
+EXPORT_SYMBOL(my_hashtable);
+EXPORT_SYMBOL(kobj);
+EXPORT_SYMBOL(nr_buckets);
+
+static int __init mainmod_init(void)
 {
 	int ret;
 	ret = sysfs_init();
@@ -23,15 +29,15 @@ static int __init hello_init(void)
 	return ret;
 }
 
-static void __exit hello_exit(void)
+static void __exit mainmod_exit(void)
 {
 	sysfs_exit();
 	hash_exit();
 	pr_info("%s: exit: Module unloaded!\n", KBUILD_MODNAME);
 }
 
-module_init(hello_init);
-module_exit(hello_exit);
+module_init(mainmod_init);
+module_exit(mainmod_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alex V");

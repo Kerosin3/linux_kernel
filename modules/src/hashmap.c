@@ -8,7 +8,7 @@ static unsigned hash_bits = 10;
 
 static size_t g_hash_size;
 
-static unsigned long nr_buckets;
+unsigned long nr_buckets;
 
 int hash_initialize(void)
 {
@@ -21,7 +21,7 @@ int hash_initialize(void)
 		pr_err("Failed to allocate hash table\n");
 		return -ENOMEM;
 	}
-	// allocate memory for cache itself
+	// allocate memory for hashtable entry cache
 	g_entry_cache = kmem_cache_create("hashmap_cache",
 					  sizeof(struct hashmap_entry), 0,
 					  SLAB_HWCACHE_ALIGN, NULL);
@@ -60,4 +60,25 @@ void hash_exit(void)
 	kfree(my_hashtable);
 
 	pr_info("Hashmap cleaned up\n");
+}
+
+void add_to_hashmap(struct hashmap_entry *entry)
+{
+	hlist_add_head_rcu(&entry->node, my_hashtable);
+}
+
+void clean()
+{
+	struct hashmap_entry *entry;
+	struct hlist_node *tmp;
+	unsigned int bkt;
+
+	for (bkt = 0; bkt < nr_buckets; bkt++) {
+		hlist_for_each_entry_safe(entry, tmp, &my_hashtable[bkt],
+					  node) {
+			hash_del(&entry->node);
+			kfree(entry->filename);
+			kmem_cache_free(g_entry_cache, entry);
+		}
+	}
 }

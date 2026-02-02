@@ -5,8 +5,6 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 {
 	struct dir_ctx *m_ctx = container_of(ctx, struct dir_ctx, ctx);
 	struct hashmap_entry *entry;
-	u32 hash_val;
-	pr_info("enry callback\n");
 
 	if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
 		return 1;
@@ -16,6 +14,7 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 		return 1;
 	}
 
+	// alloca cache for entry
 	entry = kmem_cache_alloc(g_entry_cache, GFP_KERNEL);
 	if (!entry) {
 		m_ctx->error = -ENOMEM;
@@ -33,7 +32,8 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 	// calc hash
 	//hash_val = jhash(entry->filename, strlen(entry->filename), 0);
 
-	hlist_add_head_rcu(&entry->node, my_hashtable);
+	//hlist_add_head_rcu(&entry->node, my_hashtable);
+	add_to_hashmap(entry);
 
 	pr_info("Added file: %s\n", entry->filename);
 

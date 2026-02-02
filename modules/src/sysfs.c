@@ -1,10 +1,6 @@
 #include "sysfs.h"
 
-static ssize_t sorted_files_show(struct kobject *kobj,
-				 struct kobj_attribute *attr, char *buf)
-{
-	return 1;
-}
+struct kobject *kobj;
 
 static ssize_t scan_path_store(struct kobject *kobj,
 			       struct kobj_attribute *attr, const char *buf,
@@ -25,8 +21,25 @@ static ssize_t scan_path_store(struct kobject *kobj,
 	return count;
 }
 
+static ssize_t clean_store(struct kobject *kobj, struct kobj_attribute *attr,
+			   const char *buf, size_t count)
+{
+	int val;
+	int ret;
+
+	ret = kstrtoint(buf, 0, &val);
+	if (ret < 0) {
+		pr_err("Invalid input for clean attribute: %d\n", ret);
+		return ret;
+	}
+
+	clean();
+
+	return count;
+}
+
 static struct kobj_attribute scan_path_attr = __ATTR_WO(scan_path);
-static struct kobj_attribute sorted_files_attr = __ATTR_RO(sorted_files);
+static struct kobj_attribute clean_attr = __ATTR_WO(clean);
 
 int sysfs_init(void)
 {
@@ -42,15 +55,17 @@ int sysfs_init(void)
 		goto cleanup_kobj;
 	}
 
-	ret = sysfs_create_file(kobj, &sorted_files_attr.attr);
+	ret = sysfs_create_file(kobj, &clean_attr.attr);
 	if (ret) {
-		sysfs_remove_file(kobj, &scan_path_attr.attr);
-		goto cleanup_kobj;
+		goto cleanup_scan_path;
 	}
 
-	pr_info("Sysfs: /sys/kernel/path_scanner/ created with attributes\n");
+	pr_info("Sysfs: /sys/kernel/path_scanner/scan_path was created \n");
+	pr_info("Sysfs: /sys/kernel/path_scanner/clean was created \n");
 	return 0;
 
+cleanup_scan_path:
+	sysfs_remove_file(kobj, &scan_path_attr.attr);
 cleanup_kobj:
 	kobject_put(kobj);
 	kobj = NULL;
@@ -60,6 +75,6 @@ cleanup_kobj:
 void sysfs_exit(void)
 {
 	sysfs_remove_file(kobj, &scan_path_attr.attr);
-	sysfs_remove_file(kobj, &sorted_files_attr.attr);
+	sysfs_remove_file(kobj, &clean_attr.attr);
 	kobject_put(kobj);
 }
