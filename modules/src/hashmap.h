@@ -15,4 +15,6 @@ void add_to_hashmap(struct hashmap_entry *);
 
 void clean(void);
 
+extern unsigned hash_bits;
+
 #endif

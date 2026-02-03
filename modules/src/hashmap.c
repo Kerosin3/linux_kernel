@@ -4,7 +4,7 @@ struct kmem_cache *g_entry_cache;
 
 struct hlist_head *my_hashtable;
 
-static unsigned hash_bits = 10;
+unsigned hash_bits = 10;
 
 static size_t g_hash_size;
 
@@ -57,7 +57,7 @@ void hash_exit(void)
 	kmem_cache_destroy(g_entry_cache);
 
 	// free hashtable
-	kfree(my_hashtable);
+	kvfree(my_hashtable);
 
 	pr_info("Hashmap cleaned up\n");
 }

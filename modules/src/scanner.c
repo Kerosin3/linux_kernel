@@ -5,6 +5,8 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 {
 	struct dir_ctx *m_ctx = container_of(ctx, struct dir_ctx, ctx);
 	struct hashmap_entry *entry;
+	u32 hash_val;
+	unsigned bkt;
 
 	if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
 		return 1;
@@ -12,6 +14,17 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 	// only reg files
 	if (d_type != DT_REG) {
 		return 1;
+	}
+	// check if entry exist
+	hash_val = jhash(name, namelen, 0);
+	bkt = hash_32(hash_val, hash_bits);
+
+	struct hashmap_entry *existing;
+	hlist_for_each_entry(existing, &my_hashtable[bkt], node) {
+		// not add existing files
+		if (strcmp(existing->filename, name) == 0) {
+			return 1;
+		}
 	}
 
 	// alloca cache for entry
@@ -29,13 +42,7 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 		return -ENOMEM;
 	}
 
-	// calc hash
-	//hash_val = jhash(entry->filename, strlen(entry->filename), 0);
-
-	//hlist_add_head_rcu(&entry->node, my_hashtable);
 	add_to_hashmap(entry);
-
-	pr_info("Added file: %s\n", entry->filename);
 
 	return 1;
 }
@@ -43,8 +50,7 @@ bool dir_analysis_cb(struct dir_context *ctx, const char *name, int namelen,
 int scan_directory(const char *path)
 {
 	struct file *filp;
-	struct dir_ctx m_ctx = { .ctx.actor = dir_analysis_cb, // bool?
-				 .error = 0 };
+	struct dir_ctx m_ctx = { .ctx.actor = dir_analysis_cb, .error = 0 };
 	int ret;
 	filp = filp_open(path, O_RDONLY | O_DIRECTORY, 0);
 	if (IS_ERR(filp)) {
