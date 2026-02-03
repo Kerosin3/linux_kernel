@@ -4,12 +4,7 @@ static ssize_t sorted_files_show(struct kobject *kobj,
 				 struct kobj_attribute *attr, char *buf)
 {
 	ssize_t len = 0;
-
 	len = print_sorted_filenames(buf, len);
-	if (len < 0) {
-		return len;
-	}
-
 	return len;
 }
 

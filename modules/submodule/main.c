@@ -12,9 +12,7 @@
 
 static int __init submod_init(void)
 {
-	int ret;
-	ret = sysfs_init();
-	return ret;
+	return sysfs_init();
 }
 
 static void __exit submod_exit(void)
