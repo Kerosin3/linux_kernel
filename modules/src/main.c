@@ -1,38 +1,45 @@
-#include <linux/module.h>
 #include <linux/init.h>
+#include <linux/module.h>
+#include <linux/cdev.h>
+#include <linux/device.h>
 #include <linux/kernel.h>
-#include <linux/string.h>
-#include <linux/limits.h>
-#include <linux/list.h>
-#include <linux/slab.h>
-#include <linux/kobject.h>
+#include <linux/uaccess.h>
 #include <linux/fs.h>
 
-#include "sysfs.h"
-#include "hashmap.h"
+#include "io.h"
 
-// export symbols
-EXPORT_SYMBOL(g_entry_cache);
-EXPORT_SYMBOL(my_hashtable);
-EXPORT_SYMBOL(kobj);
-EXPORT_SYMBOL(nr_buckets);
+static const struct file_operations mychardev_fops = {
+    .owner      = THIS_MODULE,
+    .open       = xchardev_open,
+    .release    = xchardev_release,
+    .unlocked_ioctl = xchardev_ioctl,
+    .read = xchardev_read,
+    .write       = xchardev_write
+};
 
 static int __init mainmod_init(void)
 {
-	int ret;
-	ret = sysfs_init();
-	if (ret)
-		return ret;
-	ret = hash_initialize();
-	if (ret)
-		return -ENOMEM;
-	return ret;
+	int err;
+	dev_t dev;
+	err = alloc_chrdev_region(&dev, 0, MAX_DEV, "xchardev");
+	dev_major = MAJOR(dev);
+	xchardev_class = class_create("xchardev");
+	cdev_init(&dev_ctx_data->cdev, &mychardev_fops);
+	dev_ctx_data->cdev.owner = THIS_MODULE;
+	cdev_add(&dev_ctx_data->cdev, MKDEV(dev_major, 0), 1);
+	device_create(xchardev_class, NULL, MKDEV(dev_major, 0), NULL, "xchardev-%d", 0);
+	return err;
 }
 
 static void __exit mainmod_exit(void)
 {
-	sysfs_exit();
-	hash_exit();
+	device_destroy(xchardev_class, MKDEV(dev_major, 0));
+
+    class_unregister(xchardev_class);
+    class_destroy(xchardev_class);
+
+    unregister_chrdev_region(MKDEV(dev_major, 0), MINORMASK);
+
 	pr_info("%s: exit: Module unloaded!\n", KBUILD_MODNAME);
 }
 

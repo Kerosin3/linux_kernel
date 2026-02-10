@@ -1,18 +1,15 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-KMODULE := ex_bin_tree
-SUBMODULE ?= ex_sub_bin_tree
+KMODULE := bitmap
 
-obj-m += $(KMODULE).o $(SUBMODULE).o
+obj-m += $(KMODULE).o
 
 SRCS := $(wildcard src/*.c)
 $(KMODULE)-objs := $(SRCS:.c=.o)
 
-SUB_SRCS := $(wildcard submodule/*.c)
-$(SUBMODULE)-objs := $(SUB_SRCS:.c=.o)
 
-ccflags-y += -g -O0 -DDEBUG -I$(src)/inc -I$(src)/lib/inc -I$(src)/shared_h
+ccflags-y += -g -O0 -DDEBUG -I$(src)/inc
 
 all: build
 
@@ -26,7 +23,7 @@ build:
 	echo "Linux kernel version to link against: $${KERNEL_VERSION}"
 	@echo "Compiler: $$(gcc --version | head -n 1)"
 	make -C $(KDIR) M=$(PWD) modules
-	cp -fv $(KMODULE).ko $(SUBMODULE).ko $(DESTDIR)
+	cp -fv $(KMODULE).ko $(DESTDIR)
 
 format:
 	clang-format --verbose -i --style=file src/main.c lib/*.c submodule/*.c

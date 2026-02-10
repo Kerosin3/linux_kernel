@@ -110,3 +110,16 @@ echo 1 > clean
 cat sorted_files 
 echo /mnt/ > scan_path 
 cat sorted_files 
+cd /mnt/
+ls -la
+insmod bitmap.ko 
+cd /sys/module/bitmap/
+ls -la
+cd /dev/
+ls -la
+lsmod
+dmesg
+ls -la
+file
+lsmod
+lsmod -h
