@@ -3,7 +3,7 @@
 //---------- push --------------
 ssize_t push_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n", push_val);
+	return sysfs_emit(buf, "%d\n", push_val);
 }
 
 ssize_t push_store(struct kobject *kobj, struct kobj_attribute *attr,
@@ -26,7 +26,7 @@ ssize_t peek_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 	if (ret) {
 		return ret;
 	}
-	return sprintf(buf, "%d\n", peek_val);
+	return sysfs_emit(buf, "%d\n", peek_val);
 }
 
 static struct kobj_attribute peek = __ATTR_RO(peek);
@@ -38,7 +38,7 @@ ssize_t pop_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 	int ret = stack_pop(&pop_val);
 	if (ret)
 		return ret;
-	return sprintf(buf, "%d\n", pop_val);
+	return sysfs_emit(buf, "%d\n", pop_val);
 }
 
 static struct kobj_attribute pop = __ATTR_RO(pop);
@@ -49,7 +49,7 @@ ssize_t is_empty_show(struct kobject *kobj, struct kobj_attribute *attr,
 		      char *buf)
 {
 	is_empty_val = stack_is_empty();
-	return sprintf(buf, "%d\n", is_empty_val);
+	return sysfs_emit(buf, "%d\n", is_empty_val);
 }
 
 static struct kobj_attribute is_empty = __ATTR_RO(is_empty);
@@ -76,7 +76,7 @@ static struct kobj_attribute clear = __ATTR_WO(clear);
 ssize_t size_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	size_val = stack_size();
-	return sprintf(buf, "%d\n", size_val);
+	return sysfs_emit(buf, "%d\n", size_val);
 }
 
 static struct kobj_attribute size = __ATTR_RO(size);
