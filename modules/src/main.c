@@ -5,41 +5,30 @@
 #include <linux/kernel.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/mutex.h>
 
 #include "io.h"
-
-static const struct file_operations mychardev_fops = {
-    .owner      = THIS_MODULE,
-    .open       = xchardev_open,
-    .release    = xchardev_release,
-    .unlocked_ioctl = xchardev_ioctl,
-    .read = xchardev_read,
-    .write       = xchardev_write
-};
+#include "arena.h"
 
 static int __init mainmod_init(void)
 {
-	int err;
-	dev_t dev;
-	err = alloc_chrdev_region(&dev, 0, MAX_DEV, "xchardev");
-	dev_major = MAJOR(dev);
-	xchardev_class = class_create("xchardev");
-	cdev_init(&dev_ctx_data->cdev, &mychardev_fops);
-	dev_ctx_data->cdev.owner = THIS_MODULE;
-	cdev_add(&dev_ctx_data->cdev, MKDEV(dev_major, 0), 1);
-	device_create(xchardev_class, NULL, MKDEV(dev_major, 0), NULL, "xchardev-%d", 0);
-	return err;
+	int ret;
+	ret = xdev_init();
+	if (ret)
+		return ret;
+	ret = init_arena(128, 1024);
+	if (ret) {
+		pr_err("%s: init: cannot alocate arena!\n", KBUILD_MODNAME);
+		return ret;
+	}
+	pr_info("%s: init: Module loaded!\n", KBUILD_MODNAME);
+	return ret;
 }
 
 static void __exit mainmod_exit(void)
 {
-	device_destroy(xchardev_class, MKDEV(dev_major, 0));
-
-    class_unregister(xchardev_class);
-    class_destroy(xchardev_class);
-
-    unregister_chrdev_region(MKDEV(dev_major, 0), MINORMASK);
-
+	xdev_exit();
+	destroy_arena();
 	pr_info("%s: exit: Module unloaded!\n", KBUILD_MODNAME);
 }
 

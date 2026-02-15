@@ -1,0 +1,130 @@
+#include "arena.h"
+
+int init_arena(unsigned blocksize, unsigned n_blocks)
+{
+	// allocate structure
+	alloc_ctx = kzalloc(sizeof(struct allocator_data), GFP_KERNEL);
+	if (!alloc_ctx) {
+		pr_err("cannot alocate structure!\n");
+		return -ENOMEM;
+	}
+	alloc_ctx->blocksize = blocksize;
+	alloc_ctx->allocated_blocks = 0;
+	alloc_ctx->max_blocks = n_blocks * 2;
+	alloc_ctx->initial_block_limit = n_blocks;
+
+	// allocate array of pointers
+	alloc_ctx->base_ptr = kmalloc_array(
+		alloc_ctx->max_blocks, sizeof(void *), GFP_KERNEL | __GFP_ZERO);
+	if (!alloc_ctx->base_ptr) {
+		kfree(alloc_ctx);
+		pr_err("cannot allocate arrays!\n");
+		return -ENOMEM;
+	}
+
+	// allocate bitmap
+	alloc_ctx->bitmap = kzalloc(BITS_TO_LONGS(alloc_ctx->max_blocks) *
+					    sizeof(unsigned long),
+				    GFP_KERNEL);
+	if (!alloc_ctx->bitmap) {
+		kfree(alloc_ctx->base_ptr);
+		kfree(alloc_ctx);
+		pr_err("cannot allocate bitmap!\n");
+		return -ENOMEM;
+	}
+	spin_lock_init(&alloc_ctx->lock);
+	pr_info("OK!!\n");
+	return 0;
+}
+
+int alloc_block(void)
+{
+	unsigned long freebit;
+	void *mem = NULL;
+
+	// find
+	spin_lock(&alloc_ctx->lock);
+
+	// search to initial limit
+	freebit = find_first_zero_bit(alloc_ctx->bitmap,
+				      alloc_ctx->initial_block_limit);
+
+	// not possible to find in initial limit
+	if (freebit >= alloc_ctx->initial_block_limit) {
+		// allocate extend HERE!
+	}
+	// allocate in limit
+	if (freebit < alloc_ctx->initial_block_limit) {
+		// allocate memory
+		mem = vzalloc(alloc_ctx->blocksize);
+	}
+	if (!mem) {
+		spin_unlock(&alloc_ctx->lock);
+		return -ENOMEM;
+	}
+	set_bit(freebit, alloc_ctx->bitmap);
+	alloc_ctx->allocated_blocks++;
+	alloc_ctx->base_ptr[freebit] = mem;
+	//set this bit in bitmap
+	spin_unlock(&alloc_ctx->lock);
+	// return allocated block number
+	return freebit;
+}
+
+int free_block(unsigned block_idx)
+{
+	void *ptr = NULL;
+
+	spin_lock(&alloc_ctx->lock);
+
+	if (test_bit(block_idx, alloc_ctx->bitmap)) {
+		ptr = alloc_ctx->base_ptr[block_idx];
+		alloc_ctx->base_ptr[block_idx] = NULL;
+		clear_bit(block_idx, alloc_ctx->bitmap);
+	}
+	spin_unlock(&alloc_ctx->lock);
+	if (ptr) {
+		vfree(ptr);
+		ptr = NULL;
+		return 0;
+	}
+	// no such block to free
+	return -1;
+}
+
+//bitmap_weight
+
+void destroy_arena(void)
+{
+	unsigned i = 0;
+	void **base_ptr_copy;
+	unsigned long *bitmap_copy;
+	unsigned max_blocks;
+
+	if (!alloc_ctx)
+		return;
+
+	spin_lock(&alloc_ctx->lock);
+
+	base_ptr_copy = alloc_ctx->base_ptr;
+	bitmap_copy = alloc_ctx->bitmap;
+	max_blocks = alloc_ctx->max_blocks;
+
+	alloc_ctx->base_ptr = NULL;
+	alloc_ctx->bitmap = NULL;
+
+	spin_unlock(&alloc_ctx->lock);
+
+	if (base_ptr_copy && bitmap_copy) {
+		for (i = 0; i < max_blocks; i++) {
+			if (test_bit(i, bitmap_copy) &&
+			    base_ptr_copy[i] != NULL) {
+				vfree(base_ptr_copy[i]);
+			}
+		}
+	}
+	kfree(base_ptr_copy);
+	kfree(bitmap_copy);
+	kfree(alloc_ctx);
+	alloc_ctx = NULL;
+}
