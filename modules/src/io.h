@@ -10,12 +10,16 @@
 #include <linux/cdev.h>
 #include <linux/ioctl.h>
 
+#include "arena.h"
+
 #define DEVICE_NAME "xchardev"
 #define CLASSNAME "xcharclass"
 #define BUF_SIZE 1024
 
 #define XCDEV_IOC_MAGIC 'x'
-#define XCDEV_IOC_GETFREEBLOCKS _IOR(XCDEV_IOC_MAGIC, 1, unsigned);
+#define XCDEV_IOC_GETFREEBLOCKS _IOR(XCDEV_IOC_MAGIC, 1, unsigned)
+#define XCDEV_IOC_ALLOCBLOCK _IO(XCDEV_IOC_MAGIC, 2)
+#define XCDEV_IOC_FREEBLOCK _IO(XCDEV_IOC_MAGIC, 3)
 
 int xdev_init(void);
 void xdev_exit(void);
@@ -51,6 +55,7 @@ static const struct file_operations xchardev_fops = {
 	.release = xchardev_release,
 	.read = xchardev_read,
 	.write = xchardev_write,
+	.unlocked_ioctl = xchardev_ioctl,
 };
 
 #endif

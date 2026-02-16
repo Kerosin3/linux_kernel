@@ -23,17 +23,54 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct xchardev_data *data = file->private_data;
 	int ret, value;
-	// ioctl data
-	struct xdev_xdata;
 
 	if (_IOC_TYPE(cmd) != XCDEV_IOC_MAGIC) {
 		pr_warn("%s: wrong ioctl magic\n", DEVICE_NAME);
 		return -ENOTTY;
 	}
+	// max number
+	if (_IOC_NR(cmd) > 3) {
+		pr_warn("%s: Invalid ioctl command number\n", DEVICE_NAME);
+		return -ENOTTY;
+	}
 	// lock mutex
 	if (mutex_lock_interruptible(&data->lock))
 		return -ERESTARTSYS;
-	return 0;
+	switch (cmd) {
+	case XCDEV_IOC_GETFREEBLOCKS:
+		pr_info("%s: GETTING FREE BLOCKS\n", DEVICE_NAME);
+		pr_info("%s: -->[%u]<-->\n", DEVICE_NAME,
+			alloc_ctx->allocated_blocks);
+		put_user(alloc_ctx->initial_block_limit -
+				 get_number_of_allocated(),
+			 (unsigned __user *)arg);
+		break;
+	case XCDEV_IOC_ALLOCBLOCK:
+		pr_info("%s ALLOCATE A BLOCK\n", DEVICE_NAME);
+		ret = alloc_block();
+		if (ret < 0) {
+			pr_err("%s: No free blocks available\n", DEVICE_NAME);
+			ret = -ENOSPC;
+			break;
+		}
+		break;
+	case XCDEV_IOC_FREEBLOCK:
+		pr_info("%sFREE A BLOCK\n", DEVICE_NAME);
+		ret = free_some_block();
+		if (ret < 0) {
+			pr_err("%s: all blocks are free\n", DEVICE_NAME);
+			ret = -EAGAIN;
+			break;
+		}
+		break;
+	default:
+		pr_warn("%s: Unknown ioctl command: 0x%x\n", DEVICE_NAME, cmd);
+		ret = -ENOTTY;
+		break;
+	}
+
+	mutex_unlock(&data->lock);
+	return ret;
 }
 
 ssize_t xchardev_read(struct file *file, char __user *buf, size_t count,

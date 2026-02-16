@@ -14,7 +14,7 @@ struct allocator_data {
 	spinlock_t lock;
 };
 
-static struct allocator_data *alloc_ctx;
+extern struct allocator_data *alloc_ctx;
 
 int init_arena(unsigned blocksize, unsigned n_blocks);
 
@@ -22,6 +22,10 @@ int alloc_block(void);
 
 int free_block(unsigned n_block);
 
+int free_some_block(void);
+
 void destroy_arena(void);
+
+unsigned get_number_of_allocated(void);
 
 #endif

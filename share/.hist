@@ -1,1 +1,1 @@
-insmod ex_bin_tree.ko
+insmod /mnt/ex_bin_tree.ko

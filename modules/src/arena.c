@@ -1,5 +1,7 @@
 #include "arena.h"
 
+struct allocator_data *alloc_ctx = NULL;
+
 int init_arena(unsigned blocksize, unsigned n_blocks)
 {
 	// allocate structure
@@ -10,6 +12,7 @@ int init_arena(unsigned blocksize, unsigned n_blocks)
 	}
 	alloc_ctx->blocksize = blocksize;
 	alloc_ctx->allocated_blocks = 0;
+	// use x2 block by default
 	alloc_ctx->max_blocks = n_blocks * 2;
 	alloc_ctx->initial_block_limit = n_blocks;
 
@@ -51,7 +54,10 @@ int alloc_block(void)
 
 	// not possible to find in initial limit
 	if (freebit >= alloc_ctx->initial_block_limit) {
-		// allocate extend HERE!
+		if (alloc_ctx->initial_block_limit == alloc_ctx->max_blocks)
+			return -ENOMEM;
+		// extend limit
+		alloc_ctx->initial_block_limit = alloc_ctx->max_blocks;
 	}
 	// allocate in limit
 	if (freebit < alloc_ctx->initial_block_limit) {
@@ -92,6 +98,35 @@ int free_block(unsigned block_idx)
 	return -1;
 }
 
+int free_some_block(void)
+{
+	unsigned a_bit;
+	void *ptr = NULL;
+
+	spin_lock(&alloc_ctx->lock);
+
+	a_bit = find_first_bit(alloc_ctx->bitmap,
+			       alloc_ctx->initial_block_limit);
+	if (a_bit >= alloc_ctx->initial_block_limit) {
+		// all blocks are free
+		spin_unlock(&alloc_ctx->lock);
+		return -1;
+	}
+	ptr = alloc_ctx->base_ptr[a_bit];
+	alloc_ctx->base_ptr[a_bit] = NULL;
+	clear_bit(a_bit, alloc_ctx->bitmap);
+	alloc_ctx->allocated_blocks--;
+
+	spin_unlock(&alloc_ctx->lock);
+
+	if (ptr) {
+		vfree(ptr);
+		return a_bit;
+	}
+
+	return -1;
+}
+
 //bitmap_weight
 
 void destroy_arena(void)
@@ -128,3 +163,8 @@ void destroy_arena(void)
 	kfree(alloc_ctx);
 	alloc_ctx = NULL;
 }
+
+unsigned get_number_of_allocated(void)
+{
+	return bitmap_weight(alloc_ctx->bitmap,
+			     BITS_TO_LONGS(alloc_ctx->max_blocks));
