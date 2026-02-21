@@ -22,14 +22,15 @@ int xchardev_release(struct inode *inode, struct file *file)
 long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct xchardev_data *data = file->private_data;
-	int ret, value;
+	int ret;
+	unsigned iodata;
 
 	if (_IOC_TYPE(cmd) != XCDEV_IOC_MAGIC) {
 		pr_warn("%s: wrong ioctl magic\n", DEVICE_NAME);
 		return -ENOTTY;
 	}
 	// max number
-	if (_IOC_NR(cmd) > 3) {
+	if (_IOC_NR(cmd) > 7) {
 		pr_warn("%s: Invalid ioctl command number\n", DEVICE_NAME);
 		return -ENOTTY;
 	}
@@ -38,15 +39,14 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return -ERESTARTSYS;
 	switch (cmd) {
 	case XCDEV_IOC_GETFREEBLOCKS:
-		pr_info("%s: GETTING FREE BLOCKS\n", DEVICE_NAME);
-		pr_info("%s: -->[%u]<-->\n", DEVICE_NAME,
+		pr_info("%s: NUMBER OF FREE BLOCKS: [%u]\n", DEVICE_NAME,
 			alloc_ctx->allocated_blocks);
-		put_user(alloc_ctx->initial_block_limit -
+		ret = put_user(alloc_ctx->initial_block_limit -
 				 get_number_of_allocated(),
 			 (unsigned __user *)arg);
 		break;
 	case XCDEV_IOC_ALLOCBLOCK:
-		pr_info("%s ALLOCATE A BLOCK\n", DEVICE_NAME);
+		pr_info("%s: ALLOCATING NEXT BLOCK\n", DEVICE_NAME);
 		ret = alloc_block();
 		if (ret < 0) {
 			pr_err("%s: No free blocks available\n", DEVICE_NAME);
@@ -55,7 +55,7 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		break;
 	case XCDEV_IOC_FREEBLOCK:
-		pr_info("%sFREE A BLOCK\n", DEVICE_NAME);
+		pr_info("%s: FREEING SOME BLOCK\n", DEVICE_NAME);
 		ret = free_some_block();
 		if (ret < 0) {
 			pr_err("%s: all blocks are free\n", DEVICE_NAME);
@@ -63,6 +63,29 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 		break;
+
+	case XCDEV_IOC_GETALLOCATEDBLOCKS:
+		int blocksz = get_number_of_allocated();
+		pr_info("%s: NUMBER OF ALLOCATED BLOCKS: [%u]\n", DEVICE_NAME, blocksz);
+		ret = put_user(blocksz, (unsigned __user *)arg);
+		break;
+
+	case XCDEV_IOC_FREE_A_BLOCK:
+		ret = get_user(iodata, (unsigned __user *)arg);
+		if (ret)
+			break;
+		pr_info("%s: FREEING A BLOCK [%u]\n", DEVICE_NAME, iodata);
+		ret = free_a_block(iodata);
+		break;
+
+	case XCDEV_IOC_ALLOC_A_BLOCK:
+		ret = get_user(iodata, (unsigned __user *)arg);
+		if (ret)
+			break;
+		pr_info("%s: TRYING TO ALLCOATE BLOCK [%u]\n", DEVICE_NAME, iodata);
+		ret = alloc_a_block(iodata);
+		break;
+
 	default:
 		pr_warn("%s: Unknown ioctl command: 0x%x\n", DEVICE_NAME, cmd);
 		ret = -ENOTTY;

@@ -20,7 +20,9 @@ int init_arena(unsigned blocksize, unsigned n_blocks);
 
 int alloc_block(void);
 
-int free_block(unsigned n_block);
+int alloc_a_block(unsigned);
+
+int free_a_block(unsigned n_block);
 
 int free_some_block(void);
 

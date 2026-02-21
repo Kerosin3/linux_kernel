@@ -17,9 +17,20 @@
 #define BUF_SIZE 1024
 
 #define XCDEV_IOC_MAGIC 'x'
+// get free blocks
 #define XCDEV_IOC_GETFREEBLOCKS _IOR(XCDEV_IOC_MAGIC, 1, unsigned)
+// allocate next block
 #define XCDEV_IOC_ALLOCBLOCK _IO(XCDEV_IOC_MAGIC, 2)
+// find and free some block
 #define XCDEV_IOC_FREEBLOCK _IO(XCDEV_IOC_MAGIC, 3)
+// get allocated blocks number
+#define XCDEV_IOC_GETALLOCATEDBLOCKS _IOR(XCDEV_IOC_MAGIC, 4, unsigned)
+// free specific block
+#define XCDEV_IOC_FREE_A_BLOCK _IOW(XCDEV_IOC_MAGIC, 5, unsigned)
+// alloc specific block
+#define XCDEV_IOC_ALLOC_A_BLOCK _IOW(XCDEV_IOC_MAGIC, 6, unsigned)
+// show statistics
+#define XCDEV_IOC_STAT _IO(XCDEV_IOC_MAGIC, 7)
 
 int xdev_init(void);
 void xdev_exit(void);

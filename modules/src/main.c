@@ -1,3 +1,4 @@
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/cdev.h>
@@ -10,13 +11,16 @@
 #include "io.h"
 #include "arena.h"
 
+#define M_BLOCK_SIZE 128
+#define M_BLOCK_NUMBER 1024 // 2048 reserved
+
 static int __init mainmod_init(void)
 {
 	int ret;
 	ret = xdev_init();
 	if (ret)
 		return ret;
-	ret = init_arena(128, 1024);
+	ret = init_arena(M_BLOCK_SIZE, M_BLOCK_NUMBER);
 	if (ret) {
 		pr_err("%s: init: cannot alocate arena!\n", KBUILD_MODNAME);
 		return ret;
@@ -37,5 +41,5 @@ module_exit(mainmod_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alex V");
-MODULE_DESCRIPTION("Homework 6");
+MODULE_DESCRIPTION("Homework 5");
 MODULE_VERSION("1.0");

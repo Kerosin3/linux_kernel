@@ -36,9 +36,50 @@ int init_arena(unsigned blocksize, unsigned n_blocks)
 		return -ENOMEM;
 	}
 	spin_lock_init(&alloc_ctx->lock);
-	pr_info("OK!!\n");
 	return 0;
 }
+
+int alloc_a_block(unsigned blocknumber)
+{
+	void *mem = NULL;
+	int bitisset = 0;
+
+	if ( blocknumber > alloc_ctx->max_blocks)
+			return -EINVAL;
+
+	spin_lock(&alloc_ctx->lock);
+
+	bitisset = test_bit(blocknumber, alloc_ctx->bitmap);
+
+	if (blocknumber >= alloc_ctx->initial_block_limit)
+		alloc_ctx->initial_block_limit = alloc_ctx->max_blocks;
+
+	// block is occupied
+	if (bitisset) {
+		spin_unlock(&alloc_ctx->lock);
+		return -EADDRINUSE;
+	}
+	// block is not occupied
+	// allocate memory
+	mem = vzalloc(alloc_ctx->blocksize);
+	if (!mem) {
+		spin_unlock(&alloc_ctx->lock);
+		return -ENOMEM;
+	}
+	// test pointer just in case
+	if (alloc_ctx->base_ptr[blocknumber]){
+		spin_unlock(&alloc_ctx->lock);
+		return -EADDRINUSE;
+	}
+	set_bit(blocknumber, alloc_ctx->bitmap);
+	alloc_ctx->base_ptr[blocknumber] = mem;
+	alloc_ctx->allocated_blocks++;
+	spin_unlock(&alloc_ctx->lock);
+	pr_info("allocated block[%u] at [0x%px]", blocknumber, mem);
+	// return allocated block number
+	return blocknumber;
+}
+
 
 int alloc_block(void)
 {
@@ -73,11 +114,12 @@ int alloc_block(void)
 	alloc_ctx->base_ptr[freebit] = mem;
 	//set this bit in bitmap
 	spin_unlock(&alloc_ctx->lock);
+	pr_info("allocated block[%lu] at [0x%px]", freebit, mem);
 	// return allocated block number
 	return freebit;
 }
 
-int free_block(unsigned block_idx)
+int free_a_block(unsigned block_idx)
 {
 	void *ptr = NULL;
 
@@ -168,3 +210,4 @@ unsigned get_number_of_allocated(void)
 {
 	return bitmap_weight(alloc_ctx->bitmap,
 			     BITS_TO_LONGS(alloc_ctx->max_blocks));
+}
