@@ -420,7 +420,6 @@ int main(int argc, char *argv[])
     if (fd < 0) {
         perror(COLOR_RED "Failed to open device" COLOR_RESET);
         printf("Make sure the kernel module is loaded!\n");
-        printf("Try: sudo insmod your_module.ko\n");
         return 1;
     }
     
@@ -433,7 +432,6 @@ int main(int argc, char *argv[])
     // Run tests
     switch (test_num) {
         case 0:
-            // Run all tests in logical order
             test_get_free_blocks(fd);
             test_get_allocated_blocks(fd);
             
@@ -443,7 +441,7 @@ int main(int argc, char *argv[])
             test_allocate_next_block(fd);
             test_free_some_block(fd);
             
-            // Test specific allocation (will free blocks first)
+            // Test specific allocation
             test_allocate_multiple_specific(fd);
             
             // Test error cases
@@ -507,13 +505,12 @@ int main(int argc, char *argv[])
             return 1;
     }
     
-    // Show final status
     printf("\n" COLOR_YELLOW "Final Status:\n" COLOR_RESET);
     print_status(fd);
     
     close(fd);
     
-    // Print test summary
+
     print_test_summary();
     
     printf("\n" COLOR_GREEN);

@@ -39,11 +39,11 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return -ERESTARTSYS;
 	switch (cmd) {
 	case XCDEV_IOC_GETFREEBLOCKS:
+		unsigned fblocks = alloc_ctx->initial_block_limit -
+				   get_number_of_allocated();
 		pr_info("%s: NUMBER OF FREE BLOCKS: [%u]\n", DEVICE_NAME,
-			alloc_ctx->allocated_blocks);
-		ret = put_user(alloc_ctx->initial_block_limit -
-				       get_number_of_allocated(),
-			       (unsigned __user *)arg);
+			fblocks);
+		ret = put_user(fblocks, (unsigned __user *)arg);
 		break;
 	case XCDEV_IOC_ALLOCBLOCK:
 		pr_info("%s: ALLOCATING NEXT BLOCK\n", DEVICE_NAME);
