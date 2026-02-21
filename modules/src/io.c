@@ -42,8 +42,8 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		pr_info("%s: NUMBER OF FREE BLOCKS: [%u]\n", DEVICE_NAME,
 			alloc_ctx->allocated_blocks);
 		ret = put_user(alloc_ctx->initial_block_limit -
-				 get_number_of_allocated(),
-			 (unsigned __user *)arg);
+				       get_number_of_allocated(),
+			       (unsigned __user *)arg);
 		break;
 	case XCDEV_IOC_ALLOCBLOCK:
 		pr_info("%s: ALLOCATING NEXT BLOCK\n", DEVICE_NAME);
@@ -66,7 +66,8 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	case XCDEV_IOC_GETALLOCATEDBLOCKS:
 		int blocksz = get_number_of_allocated();
-		pr_info("%s: NUMBER OF ALLOCATED BLOCKS: [%u]\n", DEVICE_NAME, blocksz);
+		pr_info("%s: NUMBER OF ALLOCATED BLOCKS: [%u]\n", DEVICE_NAME,
+			blocksz);
 		ret = put_user(blocksz, (unsigned __user *)arg);
 		break;
 
@@ -82,10 +83,19 @@ long xchardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		ret = get_user(iodata, (unsigned __user *)arg);
 		if (ret)
 			break;
-		pr_info("%s: TRYING TO ALLCOATE BLOCK [%u]\n", DEVICE_NAME, iodata);
+		pr_info("%s: TRYING TO ALLCOATE BLOCK [%u]\n", DEVICE_NAME,
+			iodata);
 		ret = alloc_a_block(iodata);
 		break;
 
+	case XCDEV_IOC_STAT:
+		pr_info("%s:::::::::::::::::::::::::::::::::::::::::\n",
+			DEVICE_NAME);
+		pr_info("%s:STATISTICS:\n", DEVICE_NAME);
+		printstat();
+		pr_info("%s:::::::::::::::::::::::::::::::::::::::::\n",
+			DEVICE_NAME);
+		break;
 	default:
 		pr_warn("%s: Unknown ioctl command: 0x%x\n", DEVICE_NAME, cmd);
 		ret = -ENOTTY;

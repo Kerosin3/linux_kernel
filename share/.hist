@@ -1,1 +1,1 @@
-insmod /mnt/ex_bin_tree.ko
+./mnt/runtest.sh 

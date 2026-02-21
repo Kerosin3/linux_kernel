@@ -30,4 +30,6 @@ void destroy_arena(void);
 
 unsigned get_number_of_allocated(void);
 
+void printstat(void);
+
 #endif

@@ -44,8 +44,8 @@ int alloc_a_block(unsigned blocknumber)
 	void *mem = NULL;
 	int bitisset = 0;
 
-	if ( blocknumber > alloc_ctx->max_blocks)
-			return -EINVAL;
+	if (blocknumber > alloc_ctx->max_blocks)
+		return -EINVAL;
 
 	spin_lock(&alloc_ctx->lock);
 
@@ -67,7 +67,7 @@ int alloc_a_block(unsigned blocknumber)
 		return -ENOMEM;
 	}
 	// test pointer just in case
-	if (alloc_ctx->base_ptr[blocknumber]){
+	if (alloc_ctx->base_ptr[blocknumber]) {
 		spin_unlock(&alloc_ctx->lock);
 		return -EADDRINUSE;
 	}
@@ -79,7 +79,6 @@ int alloc_a_block(unsigned blocknumber)
 	// return allocated block number
 	return blocknumber;
 }
-
 
 int alloc_block(void)
 {
@@ -210,4 +209,35 @@ unsigned get_number_of_allocated(void)
 {
 	return bitmap_weight(alloc_ctx->bitmap,
 			     BITS_TO_LONGS(alloc_ctx->max_blocks));
+}
+
+void printstat(void)
+{
+	unsigned max_run = 0;
+	unsigned current_run = 0;
+	unsigned bit = 0;
+	unsigned nbits = alloc_ctx->initial_block_limit;
+
+	spin_lock(&alloc_ctx->lock);
+	while (bit < nbits) {
+		bit = find_next_bit(alloc_ctx->bitmap, nbits, bit);
+
+		if (bit >= nbits)
+			break;
+
+		current_run = 0;
+		while (bit < nbits && test_bit(bit, alloc_ctx->bitmap)) {
+			current_run++;
+			bit++;
+		}
+
+		// choose max continuous bits
+		if (current_run > max_run) {
+			max_run = current_run;
+		}
+	}
+	spin_unlock(&alloc_ctx->lock);
+	pr_info("max number of adjacent blocks is %u, total amount of allocated blocks %u, allocator capacity [%u] blocks\n",
+		max_run, get_number_of_allocated(),
+		alloc_ctx->initial_block_limit);
 }
