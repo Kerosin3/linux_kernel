@@ -1,8 +1,0 @@
-::sysinit:/bin/sh -c 'mount -t sysfs none /sys || echo "sysfs mount failed" > /dev/console'
-::sysinit:/bin/sh -c 'mount -t proc none /proc || echo "proc mount failed" > /dev/console'
-::sysinit:/bin/sh -c 'mount -t devtmpfs none /dev || echo "devtmpfs mount failed" > /dev/console'
-::sysinit:/bin/mknod /dev/mem c 1 1
-::sysinit:/bin/sh -c 'echo "Boot took $(cut -d\" \" -f1 /proc/uptime) seconds" > /dev/console'
-::sysinit:/bin/cat /etc/banner > /dev/console
-::sysinit:/init_1
-ttyS0::respawn:/bin/sh -l </dev/ttyS0 >/dev/ttyS0 2>&1

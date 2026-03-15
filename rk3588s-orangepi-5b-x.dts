@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include "rk3588s-orangepi-5-x.dtsi"
+
+/ {
+	model = "Xunlong Orange Pi 5B";
+	compatible = "xunlong,orangepi-5b", "rockchip,rk3588s";
+
+	aliases {
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc;
+	};
+
+	gpio_isr_test_node {
+        compatible = "gpio-isr-test";
+        gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_LOW>;
+        interrupt-parent = <&gpio1>;
+        interrupts = <RK_PA4 IRQ_TYPE_EDGE_FALLING>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&gpio_isr_test_pin>;
+    };
+};
+
+&pinctrl {
+    gpio_isr_test {
+        gpio_isr_test_pin: gpio-isr-test-pin {
+            rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>;
+        };
+    };
+};
+
+&sdhci {
+	status = "okay";
+};
