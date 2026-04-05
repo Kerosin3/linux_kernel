@@ -1,13 +1,12 @@
 KDIR := ../linux-6.18
 DESTDIR := ../share/
 
-KMODULE := bitmap
+KMODULE := kernel_sync_demo
 
 obj-m += $(KMODULE).o
 
-SRCS := $(wildcard src/*.c)
-$(KMODULE)-objs := $(SRCS:.c=.o)
-
+_SRCS             := $(wildcard $(src)/src/*.c)
+$(KMODULE)-objs   := $(patsubst $(src)/%.c, %.o, $(_SRCS))
 
 ccflags-y += -g -O0 -DDEBUG -I$(src)/inc
 

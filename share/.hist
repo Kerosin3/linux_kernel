@@ -1,1 +1,5 @@
-./mnt/runtest.sh 
+cd /mnt/
+insmod sync.ko lock_type=0 num_threads=60 iterations=100000
+cd /sys/module/sync/parameters/
+echo 1 > run
+rmmod sync
