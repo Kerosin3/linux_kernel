@@ -7,6 +7,9 @@ int worker_fn_mutex(void *data)
 	unsigned int i;
 	ktime_t t_before, t_after, delta;
 
+	// wait all workers are ready
+	wait_for_completion(&ctx->threads_start);
+
 	// iterate over
 	for (i = 0; i < ctx->iterations; i++) {
 		if (kthread_should_stop())
@@ -60,6 +63,8 @@ int worker_fn_spinlock(void *data)
 	unsigned int i;
 	bool contended;
 	ktime_t t_before, t_after, delta;
+
+	wait_for_completion(&ctx->threads_start);
 
 	for (i = 0; i < ctx->iterations; i++) {
 		if (kthread_should_stop())
@@ -120,6 +125,8 @@ int worker_fn_semaphore(void *data)
 	unsigned int i;
 	ktime_t t_before, t_after, delta;
 
+	wait_for_completion(&ctx->threads_start);
+
 	for (i = 0; i < ctx->iterations; i++) {
 		if (kthread_should_stop())
 			break;
@@ -168,9 +175,11 @@ int ksd_threads_start(struct sync_ctx *ctx)
 {
 	unsigned int i;
 	int ret = 0;
+	ktime_t t_start, t_end;
 
 	atomic_set(&ctx->threads_done, 0);
 	atomic_set(&ctx->test_running, 1);
+	reinit_completion(&ctx->threads_start);
 
 	for (i = 0; i < ctx->num_threads; i++) {
 		ctx->worker_args[i].ctx = ctx;
@@ -191,11 +200,18 @@ int ksd_threads_start(struct sync_ctx *ctx)
 			goto err_stop;
 		}
 	}
-
+	// all threads are spawned
+	t_start = ktime_get();
+	// send coplete to all workers
+	complete_all(&ctx->threads_start);
 	// block untill all threads done
 	while (atomic_read(&ctx->threads_done) < ctx->num_threads) {
 		msleep(100);
 	}
+	t_end = ktime_get();
+	pr_info("kernel_sync_demo: actual test time=%lld ms\n",
+        ktime_to_ms(ktime_sub(t_end, t_start)));
+	// test complited and all threads are done
 	atomic_set(&ctx->test_running, 0);
 
 	// release threads !!
@@ -203,6 +219,7 @@ int ksd_threads_start(struct sync_ctx *ctx)
 	return 0;
 
 err_stop:
+	complete_all(&ctx->threads_start);
 	ksd_threads_stop(ctx);
 	atomic_set(&ctx->test_running, 0);
 	return ret;

@@ -79,11 +79,11 @@ static int ksd_run_set(const char *val, const struct kernel_param *kp)
 
 	mutex_unlock(&g_ctx->ctrl_lock);
 
-	// run test
-	ksd_threads_start(g_ctx);
 	pr_info("kernel_sync_demo: run triggered (threads=%u iter=%u lock=%s)\n",
 		g_ctx->num_threads, g_ctx->iterations,
 		ksd_lock_names[g_ctx->lock_type]);
+	// run test
+	ksd_threads_start(g_ctx);
 
 	return 0;
 }

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef WORK_H
 #define WORK_H
 

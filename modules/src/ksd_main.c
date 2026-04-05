@@ -10,6 +10,7 @@
 #include <linux/ktime.h>
 #include <linux/atomic.h>
 #include <linux/string.h>
+#include <linux/completion.h>
 
 #include "kernel_sync_demo.h"
 #include "work.h"
@@ -110,6 +111,7 @@ static struct sync_ctx *__init ksd_ctx_alloc(void)
 	ctx->total_wait_time = ktime_set(0, 0);
 	atomic_set(&ctx->threads_done, 0);
 	atomic_set(&ctx->test_running, 0);
+	init_completion(&ctx->threads_start);
 
 	// init ctrl mutex
 	mutex_init(&ctx->ctrl_lock);

@@ -8,6 +8,7 @@
 #include <linux/ktime.h>
 #include <linux/atomic.h>
 #include <linux/sched.h>
+#include <linux/completion.h>
 
 #define KSD_THREADS_MIN 1u
 #define KSD_THREADS_MAX 64u
@@ -41,6 +42,7 @@ struct sync_ctx {
 	struct task_struct **threads;
 	struct worker_args *worker_args;
 	atomic_t threads_done;
+	struct completion threads_start;
 	int last_run_result;
 
 	// runtime reconf control
