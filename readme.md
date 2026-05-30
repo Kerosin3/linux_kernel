@@ -1,4 +1,4 @@
-# Homework 7 (SMP 4 cores default)
+# Homework 10 (memory with rust)
 
 ## Instruction how to run
 
@@ -6,10 +6,9 @@
 1. make sure qemu-system-x86_64 is installed
 2. run in repo root directory:
 ```
-qemu-system-x86_64 -kernel ./linux-kernel/arch/x86/boot/bzImage -append console=ttyS0 -initrd rootfs.cpio.gz -enable-kvm -nographic -m 256 -fsdev local,id=hostshare,path=./share,security_model=none -device virtio-9p-pci,fsdev=hostshare,mount_tag=hostshare -smp cpus=4
+qemu-system-x86_64 -kernel ./linux-kernel/arch/x86/boot/bzImage -append console=ttyS0 -initrd rootfs.cpio.gz -enable-kvm -nographic -m 256 -fsdev local,id=hostshare,path=./share,security_model=none -device virtio-9p-pci,fsdev=hostshare,mount_tag=hostshare -smp cpus=4 -cpu host
 ```
 3. run ```./mnt/runtest.sh``` in virtual environment
-4. make sure "All tests were complited succesfully" appears in vitual env console
 
 ## Compile kernel & module
 
@@ -20,3 +19,9 @@ qemu-system-x86_64 -kernel ./linux-kernel/arch/x86/boot/bzImage -append console=
 ### Troubleshoting
 
 In case no output in terminal when running qemu try changing console=ttyS0 to ttyS1, 2, 3, and so on ...
+
+- compile separately
+`LIBCLANG_PATH=/usr/lib/llvm18/lib \
+make LLVM=/usr/lib/llvm18/bin/ \
+     BINDGEN=/home/kero/.cargo/bin/bindgen \
+     -j$(nproc)`

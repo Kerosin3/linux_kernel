@@ -1,3 +1,64 @@
 ./mnt/runtest.sh 
 htop
 uname -a
+ls -la /
+cd /mnt/
+ls -la
+insmod hello.ko 
+cd /mnt/
+ls
+insmod hello.ko 
+exit
+cd /mnt/
+insmod hello.ko 
+cd /dev/
+ls -la
+cd mnt/
+insmod hello.ko 
+dmesg
+cat /dev/rust_mmap 
+ls -la
+./test_mmap 
+cd /mnt/
+ls -la
+./test_mmap 
+exit
+cd /mnt/
+ls -la
+./test_mmap 
+ls -la
+ls
+./test_mmap 
+cd /mnt/
+./test_mmap 
+cd /mnt/
+./test_mmap 
+cd /mnt/
+./test_mmap 
+ls -la
+insmod rust_module.ko 
+./test_mmap 
+cd /mnt/
+./test_mmap 
+insmod rust_module.ko 
+./test_mmap 
+cd /mnt/
+insmod rust_module.ko 
+./test_mmap 
+dmesg | tail -20
+cd /mnt/
+insmod rust_module.ko 
+./test_mmap 
+cd /mnt/
+insmod rust_module.ko 
+./test_mmap 
+cd /mnt/
+insmod rust_module.ko 
+./test_mmap 
+rmmod rust_mmap
+ls -la
+rmmod rust_module
+cd /mnt/
+insmod rust_module.ko 
+./test_mmap 
+./mnt/runtest.sh 
