@@ -29,7 +29,6 @@ int main(void)
 
     printf("mapped %d pages at %p\n\n", PAGES, (void *)mem);
 
-    // распечатаем страницы
     for (int p = 0; p < PAGES; p++) {
         uint8_t *page = mem + p * PAGE_SIZE;
         uint32_t magic = *(uint32_t *)page;
